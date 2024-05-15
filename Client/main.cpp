@@ -39,13 +39,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,     /*실행 된 프로세스의
         return FALSE;
     }
 
+    // 단축키 테이블 정보 로딩
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_CLIENT));
 
     MSG msg;
 
-    // 기본 메시지 루프입니다:
+    // GetMessage
+    // 메세지큐에서 메세지 확인 될 때까지 대기
+    // msg.messege == WM_QUIT 인 경우 false 를 반환 -> 프로그램 종류
     while (GetMessage(&msg, nullptr, 0, 0))
     {
+        
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
             TranslateMessage(&msg);
@@ -121,7 +125,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_PAINT    - 주 창을 그립니다.
 //  WM_DESTROY  - 종료 메시지를 게시하고 반환합니다.
 //
-//
+POINT g_ptObjPos = { 500, 300 };
+POINT g_ptObjScale = { 100, 100 };
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -143,14 +148,67 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
-    case WM_PAINT:
+    case WM_PAINT: // 무효화 영역(Invalidate)이 발생한 경우
         {
             PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
+            // Device Context 만들어서 ID 를 반환
+            HDC hdc = BeginPaint(hWnd, &ps); // Device Context (그리기)
+            // DC 의 목적지는 hwnd
+            // DC 의 펜은 기본펜(black)
+            // DC 의 브러쉬는 기본 브러쉬(white)
+
+            // 집적 펜과 브러쉬를 만들어서 dc 에 지급
+            HPEN hRedpen = CreatePen(PS_SOLID,1,RGB(255,0,0));
+            HBRUSH hBlueBrush = CreateSolidBrush(RGB(0, 0, 255));
+            // 기본 펜과 브러쉬 ID 값을 받아 둠
+            HPEN hDefaultPen = (HPEN)SelectObject(hdc, hRedpen);
+            HBRUSH hDefaultBrush = (HBRUSH)SelectObject(hdc, hBlueBrush);
+            // 변경된 펜과 브러쉬로 사각형 그림
+            Rectangle(hdc, g_ptObjPos.x - g_ptObjScale.x/2
+                         , g_ptObjPos.y - g_ptObjScale.y/2
+                         , g_ptObjPos.x + g_ptObjScale.x/2
+                         , g_ptObjPos.y + g_ptObjScale.y/2);
+
+            // DC의 펜을 원래 펜과 브러쉬로 되돌림
+            SelectObject(hdc, hDefaultPen);
+            SelectObject(hdc, hDefaultBrush);
+            // 다 쓴 Red펜과 브러쉬 삭제 요청.
+            DeleteObject(hRedpen);
+            DeleteObject(hBlueBrush);
+            // 그리기 종료
             EndPaint(hWnd, &ps);
         }
         break;
+    case WM_KEYDOWN:
+    {
+        switch (wParam)
+        {
+        case VK_UP:
+            g_ptObjPos.y -= 10;
+            InvalidateRect(hWnd, nullptr,true);
+           break;
+        case VK_DOWN:
+            g_ptObjPos.y += 10;
+            InvalidateRect(hWnd, nullptr, true);
+            break;
+        case VK_LEFT:
+            g_ptObjPos.x -= 10;
+            InvalidateRect(hWnd, nullptr, true);
+            break;
+        case VK_RIGHT:
+            g_ptObjPos.x += 10;
+            InvalidateRect(hWnd, nullptr, true);
+            break;
+            
+        }
+    }
+    break;
+    case WM_LBUTTONDOWN:
+    {
+       //g_x = LOWORD(lParam);
+      //  g_y =HIWORD(lParam);
+    }
+    break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
