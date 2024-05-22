@@ -46,12 +46,14 @@ private:
 public:
 	int init(HWND	_hwnd, POINT	_ptResolution);
 	void progress();
+private:
 	void Update();
 	void Render();
+public:
+	HWND GetMainHwnd() { return m_hwnd; }
 
-private:
-	CCore();
-	~CCore();
+
+
 };
 
 
